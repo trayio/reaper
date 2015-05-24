@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os"
 	"sort"
-	"sync"
 
 	"github.com/trayio/reaper/candidates"
+	"github.com/trayio/reaper/collector"
 	"github.com/trayio/reaper/config"
 
 	"github.com/trayio/reaper/Godeps/_workspace/src/github.com/awslabs/aws-sdk-go/aws"
@@ -26,59 +26,12 @@ var regions = []string{
 	"us-west-2",
 }
 
-func getReservations(cfg *aws.Config, result chan []*ec2.Reservation, wg *sync.WaitGroup) {
-	defer wg.Done()
-
-	reservations := []*ec2.Reservation{}
-	service := ec2.New(cfg)
-
-	describeInstancesOutput, err := service.DescribeInstances(nil)
-	if err != nil {
-		fmt.Println("Error in region", cfg.Region, ":", err)
-		return
-	}
-	reservations = describeInstancesOutput.Reservations
-
-	// not empty if response is not paged as per docs, but a null pointer
-	// https://godoc.org/github.com/awslabs/aws-sdk-go/service/ec2#DescribeInstancesOutput
-	for describeInstancesOutput.NextToken != nil {
-		describeInstancesOutput, err = service.DescribeInstances(
-			&ec2.DescribeInstancesInput{
-				NextToken: describeInstancesOutput.NextToken,
-			},
-		)
-		if err != nil {
-			fmt.Println("Error in region", cfg.Region, ":", err)
-			return
-		}
-		reservations = append(reservations, describeInstancesOutput.Reservations...)
-	}
-	result <- reservations
-}
-
-func dispatcher(regions []string) chan []*ec2.Reservation {
-	var wg sync.WaitGroup
-
-	ch := make(chan []*ec2.Reservation)
-	go func() {
-		for _, region := range regions {
-			cfg := &aws.Config{
-				Region:      region,
-				Credentials: aws.DetectCreds("", "", ""),
-			}
-			wg.Add(1)
-			go getReservations(cfg, ch, &wg)
-		}
-		wg.Wait()
-		close(ch)
-	}()
-
-	return ch
-}
-
 func main() {
 	instanceTag := flag.String("tag", "group", "Tag name to group instances by")
 	configFile := flag.String("c", "conf.js", "Configuration file.")
+
+	accessId := flag.String("access", "", "AWS access ID")
+	secretKey := flag.String("secret", "", "AWS secret key")
 	flag.Parse()
 
 	c, err := config.New(*configFile)
@@ -89,7 +42,9 @@ func main() {
 
 	groups := make(map[string]candidates.Candidates)
 
-	ch := dispatcher(regions)
+	credentials := aws.DetectCreds(*accessId, *secretKey, "")
+
+	ch := collector.Dispatch(credentials, regions)
 
 	reservations := []*ec2.Reservation{}
 
