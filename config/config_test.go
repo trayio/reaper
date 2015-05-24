@@ -19,7 +19,7 @@ func TestGenerateConfig(t *testing.T) {
 }
 	`)
 
-	c, err := generateConfig(cfg)
+	c, err := generate(cfg)
 	if err != nil {
 		t.Errorf("Failed to create config: %s", err)
 	}
