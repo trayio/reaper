@@ -64,8 +64,6 @@ func main() {
 		reservations = append(reservations, result...)
 	}
 
-	log.Println(awsutil.StringValue(reservations))
-
 	// []reservation -> []instances ->
 	//		PublicIpAddress, PrivateIpAddress
 	//		[]*tag -> Key, Value
@@ -93,7 +91,7 @@ func main() {
 		sort.Reverse(oldies)
 
 		if cfg[tag].Count >= len(oldies) {
-			log.Fatalf("Refusing to terminate all instances in group %s.", tag)
+			log.Fatalf("Refusing to terminate all instances in group %s.\n", tag)
 		} else {
 			for _, oldie := range oldies[:cfg[tag].Count] {
 				log.Printf("Instance %s from %s selected for termination.\n", oldie.ID, tag)
