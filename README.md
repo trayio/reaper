@@ -17,9 +17,11 @@ Usage of ./reaper:
 
 By default tag used is *group*. Use **-tag** option to select a different tag.
 
-##### configuration
+
+###### Configuration
 
 Configuration sample with two groups defined by tags *nginx-production* and *nginx-staging*.
+
 Group *nginx-production*:
 
 - terminate 3 instances older than 3 days
