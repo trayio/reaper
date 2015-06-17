@@ -86,12 +86,19 @@ func main() {
 	for tag, hosts := range group {
 		oldies := hosts.OlderThan(cfg[tag].Age)
 
+		if len(oldies) == len(hosts) && cfg[tag].Count >= len(oldies) {
+			log.Fatalf("Refusing to terminate all instances in group %s.\n", tag)
+		}
+
 		// oldest instance first
 		sort.Sort(oldies)
 		sort.Reverse(oldies)
 
 		if cfg[tag].Count >= len(oldies) {
-			log.Fatalf("Refusing to terminate all instances in group %s.\n", tag)
+			for _, oldie := range oldies {
+				log.Printf("Instance %s from %s selected for termination.\n", oldie.ID, tag)
+				params.InstanceIDs = append(params.InstanceIDs, aws.String(oldie.ID))
+			}
 		} else {
 			for _, oldie := range oldies[:cfg[tag].Count] {
 				log.Printf("Instance %s from %s selected for termination.\n", oldie.ID, tag)
