@@ -21,8 +21,6 @@ func reservations(cfg *aws.Config, result chan []*ec2.Reservation, wg *sync.Wait
 	}
 	reservations = describeInstancesOutput.Reservations
 
-	// not empty if response is not paged as per docs, but a null pointer
-	// https://godoc.org/github.com/awslabs/aws-sdk-go/service/ec2#DescribeInstancesOutput
 	for describeInstancesOutput.NextToken != nil {
 		describeInstancesOutput, err = service.DescribeInstances(
 			&ec2.DescribeInstancesInput{
