@@ -11,6 +11,8 @@ type Candidate struct {
 
 type Candidates []Candidate
 
+type Group map[string]Candidates
+
 func (c Candidates) Len() int {
 	return len(c)
 }
