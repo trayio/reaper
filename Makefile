@@ -1,8 +1,5 @@
 test:
-	go test -v ./...
-
-vet:
-	go tool vet -v -cover ./
+	go test -cover ./...
 
 build: test
 	CGO_ENABLED=0 go build -a --installsuffix cgo
