@@ -93,8 +93,7 @@ func main() {
 		sort.Reverse(oldies)
 
 		if cfg[tag].Count >= len(oldies) {
-			log.Fatalf("Refusing to terminate all instances from group %s.", tag)
-			return
+			log.Fatalf("Refusing to terminate all instances in group %s.", tag)
 		} else {
 			for _, oldie := range oldies[:cfg[tag].Count] {
 				log.Printf("Instance %s from %s selected for termination.\n", oldie.ID, tag)
