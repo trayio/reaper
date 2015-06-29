@@ -4,8 +4,9 @@ import (
 	"log"
 	"sync"
 
-	"github.com/trayio/reaper/Godeps/_workspace/src/github.com/awslabs/aws-sdk-go/aws"
-	"github.com/trayio/reaper/Godeps/_workspace/src/github.com/awslabs/aws-sdk-go/service/ec2"
+	"github.com/trayio/reaper/Godeps/_workspace/src/github.com/aws/aws-sdk-go/aws"
+	"github.com/trayio/reaper/Godeps/_workspace/src/github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/trayio/reaper/Godeps/_workspace/src/github.com/aws/aws-sdk-go/service/ec2"
 )
 
 func reservations(cfg *aws.Config, result chan []*ec2.Reservation, wg *sync.WaitGroup) {
@@ -36,7 +37,7 @@ func reservations(cfg *aws.Config, result chan []*ec2.Reservation, wg *sync.Wait
 	result <- reservations
 }
 
-func Dispatch(credentials aws.CredentialsProvider, regions []string) chan []*ec2.Reservation {
+func Dispatch(credentials *credentials.Credentials, regions []string) chan []*ec2.Reservation {
 	var wg sync.WaitGroup
 
 	ch := make(chan []*ec2.Reservation)

@@ -6,32 +6,44 @@
 	],
 	"Deps": [
 		{
-			"ImportPath": "github.com/awslabs/aws-sdk-go/aws",
-			"Rev": "876a0d58f03015fb59eb3667c6e846590029bacd"
+			"ImportPath": "github.com/aws/aws-sdk-go/aws",
+			"Comment": "v0.6.4-2-g168a70b",
+			"Rev": "168a70b9c21a4f60166d7925b690356605907adb"
 		},
 		{
-			"ImportPath": "github.com/awslabs/aws-sdk-go/internal/endpoints",
-			"Rev": "876a0d58f03015fb59eb3667c6e846590029bacd"
+			"ImportPath": "github.com/aws/aws-sdk-go/internal/endpoints",
+			"Comment": "v0.6.4-2-g168a70b",
+			"Rev": "168a70b9c21a4f60166d7925b690356605907adb"
 		},
 		{
-			"ImportPath": "github.com/awslabs/aws-sdk-go/internal/protocol/ec2query",
-			"Rev": "876a0d58f03015fb59eb3667c6e846590029bacd"
+			"ImportPath": "github.com/aws/aws-sdk-go/internal/protocol/ec2query",
+			"Comment": "v0.6.4-2-g168a70b",
+			"Rev": "168a70b9c21a4f60166d7925b690356605907adb"
 		},
 		{
-			"ImportPath": "github.com/awslabs/aws-sdk-go/internal/protocol/query/queryutil",
-			"Rev": "876a0d58f03015fb59eb3667c6e846590029bacd"
+			"ImportPath": "github.com/aws/aws-sdk-go/internal/protocol/query/queryutil",
+			"Comment": "v0.6.4-2-g168a70b",
+			"Rev": "168a70b9c21a4f60166d7925b690356605907adb"
 		},
 		{
-			"ImportPath": "github.com/awslabs/aws-sdk-go/internal/protocol/xml/xmlutil",
-			"Rev": "876a0d58f03015fb59eb3667c6e846590029bacd"
+			"ImportPath": "github.com/aws/aws-sdk-go/internal/protocol/rest",
+			"Comment": "v0.6.4-2-g168a70b",
+			"Rev": "168a70b9c21a4f60166d7925b690356605907adb"
 		},
 		{
-			"ImportPath": "github.com/awslabs/aws-sdk-go/internal/signer/v4",
-			"Rev": "876a0d58f03015fb59eb3667c6e846590029bacd"
+			"ImportPath": "github.com/aws/aws-sdk-go/internal/protocol/xml/xmlutil",
+			"Comment": "v0.6.4-2-g168a70b",
+			"Rev": "168a70b9c21a4f60166d7925b690356605907adb"
 		},
 		{
-			"ImportPath": "github.com/awslabs/aws-sdk-go/service/ec2",
-			"Rev": "876a0d58f03015fb59eb3667c6e846590029bacd"
+			"ImportPath": "github.com/aws/aws-sdk-go/internal/signer/v4",
+			"Comment": "v0.6.4-2-g168a70b",
+			"Rev": "168a70b9c21a4f60166d7925b690356605907adb"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/service/ec2",
+			"Comment": "v0.6.4-2-g168a70b",
+			"Rev": "168a70b9c21a4f60166d7925b690356605907adb"
 		},
 		{
 			"ImportPath": "github.com/vaughan0/go-ini",

@@ -10,9 +10,10 @@ import (
 	"github.com/trayio/reaper/collector"
 	"github.com/trayio/reaper/config"
 
-	"github.com/trayio/reaper/Godeps/_workspace/src/github.com/awslabs/aws-sdk-go/aws"
-	"github.com/trayio/reaper/Godeps/_workspace/src/github.com/awslabs/aws-sdk-go/aws/awsutil"
-	"github.com/trayio/reaper/Godeps/_workspace/src/github.com/awslabs/aws-sdk-go/service/ec2"
+	"github.com/trayio/reaper/Godeps/_workspace/src/github.com/aws/aws-sdk-go/aws"
+	"github.com/trayio/reaper/Godeps/_workspace/src/github.com/aws/aws-sdk-go/aws/awsutil"
+	"github.com/trayio/reaper/Godeps/_workspace/src/github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/trayio/reaper/Godeps/_workspace/src/github.com/aws/aws-sdk-go/service/ec2"
 )
 
 var regions = []string{
@@ -32,8 +33,6 @@ func main() {
 	configFile := flag.String("c", "conf.js", "Configuration file.")
 	dryRun := flag.Bool("dry", false, "Enable dry run.")
 
-	accessId := flag.String("access", "", "AWS access ID")
-	secretKey := flag.String("secret", "", "AWS secret key")
 	region := flag.String("region", "us-west-1", "AWS region")
 	flag.Parse()
 
@@ -43,11 +42,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	credentials := aws.DetectCreds(*accessId, *secretKey, "")
+	credentialsProvider := credentials.NewChainCredentials(
+		[]credentials.Provider{
+			&credentials.SharedCredentialsProvider{},
+			&credentials.EnvProvider{},
+			&credentials.EC2RoleProvider{},
+		},
+	)
+
 	service := ec2.New(
 		&aws.Config{
 			Region:      *region,
-			Credentials: credentials,
+			Credentials: credentialsProvider,
 		},
 	)
 
@@ -58,7 +64,7 @@ func main() {
 	group := make(candidates.Group)
 
 	reservations := make([]*ec2.Reservation, 0)
-	ch := collector.Dispatch(credentials, regions)
+	ch := collector.Dispatch(credentialsProvider, regions)
 
 	for result := range ch {
 		reservations = append(reservations, result...)
@@ -102,9 +108,13 @@ func main() {
 		}
 	}
 
-	resp, err := service.TerminateInstances(params)
-	if err != nil {
-		log.Println("ERROR:", err)
+	if len(params.InstanceIDs) > 0 {
+		resp, err := service.TerminateInstances(params)
+		if err != nil {
+			log.Println("ERROR:", err)
+		}
+		log.Println(awsutil.StringValue(resp))
+	} else {
+		log.Printf("No instances suitable for termination.")
 	}
-	log.Println(awsutil.StringValue(resp))
 }
