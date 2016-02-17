@@ -22,6 +22,6 @@ clean:
 	rm -f $(TARGET)
 
 test:
-	$(GO) test -v ./...
+	$(GO) test -v $(shell go list ./... | grep -v "vendor")
 
 .PHONY: build clean test
