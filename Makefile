@@ -1,19 +1,27 @@
-PROJECT = reaper
-GOPATH := $(GOPATH)
-USER = $(shell id -un)
-IMAGE = golang:1.4.2
+SOURCES := $(filter-out $(wildcard *_test.go),$(wildcard *.go))
 
-DOCKER := docker run --rm -v $(PWD):/go/src/github.com/trayio/$(PROJECT) -w /go/src/github.com/trayio/$(PROJECT) -v /etc/passwd:/etc/passwd:ro -v /etc/group:/etc/group:ro -u $(USER):$(USER) $(IMAGE)
-DOCKER_BUILD_STATIC := docker run --rm -v $(PWD):/go/src/github.com/trayio/$(PROJECT) -w /go/src/github.com/trayio/$(PROJECT) -e CGO_ENABLED=0 -v /etc/passwd:/etc/passwd:ro -v /etc/group:/etc/group:ro -u $(USER):$(USER) $(IMAGE)
+GO := $(shell command -v go)
+GO_VERSION = 1.5.3 # for docker image only
 
+TARGET := reaper
 
-test:
-	$(DOCKER) go test -v ./...
+ifdef GO
+	GO := GO15VENDOREXPERIMENT=1 CGO_ENABLED=0 $(GO)
+endif
 
-build:
-	$(DOCKER_BUILD_STATIC) go build -a --installsuffix cgo -o $(PROJECT) .
+ifndef GO
+	GO := docker run --rm -v $(PWD):/go/src/github.com/trayio/reaper -w /go/src/github.com/trayio/reaper -e CGO_ENABLED=0 GO15VENDOREXPERIMENT=1 golang:$(GO_VERSION) go
+endif
+
+$(TARGET): $(SOURCES)
+	$(GO) build -a --installsuffix cgo -o $@
+
+build: $(TARGET)
 
 clean:
-	rm -f $(PROJECT)
+	rm -f $(TARGET)
 
-.PHONY: test build clean
+test:
+	$(GO) test -v ./...
+
+.PHONY: build clean test
