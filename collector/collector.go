@@ -4,16 +4,17 @@ import (
 	"log"
 	"sync"
 
-	"github.com/trayio/reaper/Godeps/_workspace/src/github.com/aws/aws-sdk-go/aws"
-	"github.com/trayio/reaper/Godeps/_workspace/src/github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/trayio/reaper/Godeps/_workspace/src/github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
 func reservations(cfg *aws.Config, result chan []*ec2.Reservation, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	reservations := []*ec2.Reservation{}
-	service := ec2.New(cfg)
+	service := ec2.New(session.New(), cfg)
 
 	describeInstancesOutput, err := service.DescribeInstances(nil)
 	if err != nil {
@@ -44,7 +45,7 @@ func Dispatch(credentials *credentials.Credentials, regions []string) chan []*ec
 	go func() {
 		for _, region := range regions {
 			cfg := &aws.Config{
-				Region:      region,
+				Region:      aws.String(region),
 				Credentials: credentials,
 			}
 			wg.Add(1)

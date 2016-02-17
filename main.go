@@ -11,10 +11,12 @@ import (
 	"github.com/trayio/reaper/collector"
 	"github.com/trayio/reaper/config"
 
-	"github.com/trayio/reaper/Godeps/_workspace/src/github.com/aws/aws-sdk-go/aws"
-	"github.com/trayio/reaper/Godeps/_workspace/src/github.com/aws/aws-sdk-go/aws/awsutil"
-	"github.com/trayio/reaper/Godeps/_workspace/src/github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/trayio/reaper/Godeps/_workspace/src/github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awsutil"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/credentials/ec2rolecreds"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
 var regions = []string{
@@ -53,19 +55,20 @@ func main() {
 		[]credentials.Provider{
 			&credentials.SharedCredentialsProvider{},
 			&credentials.EnvProvider{},
-			&credentials.EC2RoleProvider{},
+			&ec2rolecreds.EC2RoleProvider{},
 		},
 	)
 
 	service := ec2.New(
+		session.New(),
 		&aws.Config{
-			Region:      *region,
+			Region:      aws.String(*region),
 			Credentials: credentialsProvider,
 		},
 	)
 
 	params := &ec2.TerminateInstancesInput{
-		DryRun: aws.Boolean(*dryRun),
+		DryRun: aws.Bool(*dryRun),
 	}
 
 	group := make(candidates.Group)
@@ -86,7 +89,7 @@ func main() {
 				if *tag.Key == *groupTag && *instance.State.Name == "running" {
 					if _, ok := cfg[*tag.Value]; ok {
 						info := candidates.Candidate{
-							ID:        *instance.InstanceID,
+							ID:        *instance.InstanceId,
 							CreatedAt: *instance.LaunchTime,
 						}
 						group[*tag.Value] = append(group[*tag.Value], info)
@@ -111,11 +114,11 @@ func main() {
 
 		for _, oldie := range oldies {
 			log.Printf("Selected for termination: %s from %s.\n", oldie.ID, tag)
-			params.InstanceIDs = append(params.InstanceIDs, aws.String(oldie.ID))
+			params.InstanceIds = append(params.InstanceIds, aws.String(oldie.ID))
 		}
 	}
 
-	if len(params.InstanceIDs) > 0 {
+	if len(params.InstanceIds) > 0 {
 		resp, err := service.TerminateInstances(params)
 		if err != nil {
 			log.Println("ERROR:", err)
