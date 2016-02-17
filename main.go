@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"sort"
@@ -41,6 +42,12 @@ func main() {
 		log.Println("Configuration failed:", err)
 		os.Exit(1)
 	}
+
+	fmt.Printf("%#v\n", cfg)
+	for key, value := range cfg {
+		fmt.Printf("%#v => %#v\n", key, value)
+	}
+	os.Exit(1)
 
 	credentialsProvider := credentials.NewChainCredentials(
 		[]credentials.Provider{

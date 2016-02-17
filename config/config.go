@@ -1,8 +1,9 @@
 package config
 
 import (
-	"encoding/json"
 	"io/ioutil"
+
+	"github.com/hashicorp/hcl"
 )
 
 // Count: how many instances
@@ -26,6 +27,8 @@ func New(filename string) (Configuration, error) {
 func generate(data []byte) (Configuration, error) {
 	c := make(Configuration)
 
-	err := json.Unmarshal(data, &c)
+	err := hcl.Decode(&c, string(data))
+
+	//err := json.Unmarshal(data, &c)
 	return c, err
 }
