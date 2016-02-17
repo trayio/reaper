@@ -10,7 +10,7 @@ ifdef GO
 endif
 
 ifndef GO
-	GO := docker run --rm -v $(PWD):/go/src/github.com/trayio/reaper -w /go/src/github.com/trayio/reaper -e CGO_ENABLED=0 GO15VENDOREXPERIMENT=1 golang:$(GO_VERSION) go
+	GO := docker run --rm -v $(PWD):/go/src/github.com/trayio/reaper -w /go/src/github.com/trayio/reaper -e CGO_ENABLED=0 -e GO15VENDOREXPERIMENT=1 golang:$(GO_VERSION) go
 endif
 
 $(TARGET): $(SOURCES)
