@@ -43,3 +43,8 @@ Group *nginx-staging*:
     }
 }
 ```
+
+Vendor:
+
+- aws-go-sdk v1.1.3
+- HCL 1c284ec98f4b398443cbabb0d9197f7f4cc0077c
