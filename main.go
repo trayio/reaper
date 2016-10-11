@@ -12,8 +12,6 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awsutil"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/credentials/ec2rolecreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 )
@@ -44,19 +42,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	credentialsProvider := credentials.NewChainCredentials(
-		[]credentials.Provider{
-			&credentials.SharedCredentialsProvider{},
-			&credentials.EnvProvider{},
-			&ec2rolecreds.EC2RoleProvider{},
-		},
-	)
-
 	service := ec2.New(
 		session.New(),
 		&aws.Config{
-			Region:      aws.String(*region),
-			Credentials: credentialsProvider,
+			Region: aws.String(*region),
 		},
 	)
 
@@ -67,7 +56,7 @@ func main() {
 	group := make(candidates.Group)
 
 	reservations := make([]*ec2.Reservation, 0)
-	ch := collector.Dispatch(credentialsProvider, regions)
+	ch := collector.Dispatch(regions)
 
 	for result := range ch {
 		reservations = append(reservations, result...)

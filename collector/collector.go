@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 )
@@ -38,15 +37,14 @@ func reservations(cfg *aws.Config, result chan []*ec2.Reservation, wg *sync.Wait
 	result <- reservations
 }
 
-func Dispatch(credentials *credentials.Credentials, regions []string) chan []*ec2.Reservation {
+func Dispatch(regions []string) chan []*ec2.Reservation {
 	var wg sync.WaitGroup
 
 	ch := make(chan []*ec2.Reservation)
 	go func() {
 		for _, region := range regions {
 			cfg := &aws.Config{
-				Region:      aws.String(region),
-				Credentials: credentials,
+				Region: aws.String(region),
 			}
 			wg.Add(1)
 			go reservations(cfg, ch, &wg)
