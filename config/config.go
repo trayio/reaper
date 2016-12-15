@@ -9,8 +9,9 @@ import (
 // Count: how many instances
 // Age: minium age of instance
 type ConfigItem struct {
-	Count int
-	Age   int
+	Count  int
+	Age    int
+	Region string
 }
 
 type Configuration map[string]ConfigItem

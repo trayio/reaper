@@ -7,11 +7,8 @@ Terminates EC2 instances based on tags and launch time.
 ```sh
 $ ./reaper -h
 Usage of ./reaper:
-    -access="": AWS access ID
-    -c="conf.js": Configuration file.
+    -c="config.js": Configuration file.
     -dry=false: Enable dry run.
-    -region="us-west-1": AWS region
-    -secret="": AWS secret key
     -tag="group": Tag name to group instances by
 ```
 

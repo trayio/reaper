@@ -8,13 +8,15 @@ func TestGenerateConfigJSON(t *testing.T) {
 	cfg := []byte(`
 {
     "some": {
-        "Count": 10,
-        "Age": 24
+        "count": 10,
+        "age": 24,
+        "region": "east"
     },
 
     "other": {
-        "Count": 30,
-        "Age": 72
+        "count": 30,
+        "age": 72,
+        "region": "west"
     }
 }
 	`)
@@ -51,6 +53,14 @@ func TestGenerateConfigJSON(t *testing.T) {
 	if c["other"].Age != 72 {
 		t.Errorf("Expected value 72 for attribute Age of key other, got %d\n", c["other"].Age)
 	}
+
+	if c["some"].Region != "east" {
+		t.Errorf("Expected value 'east' for attribute Region of key some, got %s\n", c["some"].Region)
+	}
+
+	if c["other"].Region != "west" {
+		t.Errorf("Expected value 'west' for attribute Region of key some, got %s\n", c["some"].Region)
+	}
 }
 
 func TestGenerateConfigHCL(t *testing.T) {
@@ -58,11 +68,13 @@ func TestGenerateConfigHCL(t *testing.T) {
 some {
   count = 10
   age = 24
+  region = "east"
 }
 
 other {
   count = 30
   age = 72
+  region = "west"
 }
 	`)
 
@@ -97,5 +109,13 @@ other {
 
 	if c["other"].Age != 72 {
 		t.Errorf("Expected value 72 for attribute Age of key other, got %d\n", c["other"].Age)
+	}
+
+	if c["some"].Region != "east" {
+		t.Errorf("Expected value 'east' for attribute Region of key some, got %s\n", c["some"].Region)
+	}
+
+	if c["other"].Region != "west" {
+		t.Errorf("Expected value 'west' for attribute Region of key some, got %s\n", c["some"].Region)
 	}
 }

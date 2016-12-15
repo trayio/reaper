@@ -2,12 +2,12 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"sort"
 
 	"github.com/trayio/reaper/candidates"
-	"github.com/trayio/reaper/collector"
 	"github.com/trayio/reaper/config"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -16,97 +16,132 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
-var regions = []string{
-	"ap-northeast-1",
-	"ap-southeast-1",
-	"ap-southeast-2",
-	"eu-central-1",
-	"eu-west-1",
-	"sa-east-1",
-	"us-east-1",
-	"us-west-1",
-	"us-west-2",
-}
+var (
+	groupTag   string
+	configFile string
+	dryRun     bool
+)
 
-func main() {
-	groupTag := flag.String("tag", "group", "Tag name to group instances by")
-	configFile := flag.String("c", "conf.js", "Configuration file.")
-	dryRun := flag.Bool("dry", false, "Enable dry run.")
+// map[group]candidates
+func getInstances(region string, groups []string) map[string]candidates.Candidates {
+	c := make(map[string]candidates.Candidates)
 
-	region := flag.String("region", "us-west-1", "AWS region")
-	flag.Parse()
+	svc := ec2.New(session.New(), &aws.Config{Region: aws.String(region)})
 
-	cfg, err := config.New(*configFile)
-	if err != nil {
-		log.Println("Configuration failed:", err)
-		os.Exit(1)
-	}
-
-	service := ec2.New(
-		session.New(),
-		&aws.Config{
-			Region: aws.String(*region),
+	params := &ec2.DescribeInstancesInput{
+		Filters: []*ec2.Filter{
+			{
+				Name:   aws.String(fmt.Sprintf("tag:%s", groupTag)),
+				Values: make([]*string, len(groups)),
+			},
 		},
-	)
-
-	params := &ec2.TerminateInstancesInput{
-		DryRun: aws.Bool(*dryRun),
 	}
 
-	group := make(candidates.Group)
-
-	reservations := make([]*ec2.Reservation, 0)
-	ch := collector.Dispatch(regions)
-
-	for result := range ch {
-		reservations = append(reservations, result...)
+	for index, group := range groups {
+		params.Filters[0].Values[index] = aws.String(group)
 	}
 
-	// []reservation -> []instances ->
-	//		PublicIpAddress, PrivateIpAddress
-	//		[]*tag -> Key, Value
+	output, err := svc.DescribeInstances(params)
+	if err != nil {
+		log.Printf("error in region %s: %s\n", region, err)
+		return nil
+	}
+
+	reservations := output.Reservations
+	if len(reservations) == 0 {
+		return c
+	}
+
 	for _, reservation := range reservations {
 		for _, instance := range reservation.Instances {
-			for _, tag := range instance.Tags {
-				if *tag.Key == *groupTag && *instance.State.Name == "running" {
-					if _, ok := cfg[*tag.Value]; ok {
-						info := candidates.Candidate{
+			if *instance.State.Name == "running" {
+				for _, tag := range instance.Tags {
+					if *tag.Key == groupTag {
+						if _, ok := c[*tag.Value]; !ok {
+							c[*tag.Value] = make(candidates.Candidates, 0)
+						}
+
+						candidate := candidates.Candidate{
 							ID:        *instance.InstanceId,
 							CreatedAt: *instance.LaunchTime,
 						}
-						group[*tag.Value] = append(group[*tag.Value], info)
+
+						c[*tag.Value] = append(c[*tag.Value], candidate)
 					}
 				}
 			}
 		}
 	}
 
-	for tag, hosts := range group {
-		oldies := hosts.OlderThan(cfg[tag].Age)
+	return c
+}
 
-		if len(oldies) == len(hosts) && cfg[tag].Count >= len(oldies) {
-			log.Fatalf("Refusing to terminate all instances in group %s.\n", tag)
-		}
+func main() {
+	flag.StringVar(&groupTag, "tag", "group", "Tag name to group instances by")
+	flag.StringVar(&configFile, "c", "config.js", "Configuration file.")
+	flag.BoolVar(&dryRun, "dry", false, "Enable dry run.")
+	flag.Parse()
 
-		sort.Sort(oldies)
-
-		if len(oldies) > cfg[tag].Count {
-			oldies = oldies[:cfg[tag].Count]
-		}
-
-		for _, oldie := range oldies {
-			log.Printf("Selected for termination: %s from %s.\n", oldie.ID, tag)
-			params.InstanceIds = append(params.InstanceIds, aws.String(oldie.ID))
-		}
+	cfg, err := config.New(configFile)
+	if err != nil {
+		log.Println("Configuration failed:", err)
+		os.Exit(1)
 	}
 
-	if len(params.InstanceIds) > 0 {
-		resp, err := service.TerminateInstances(params)
-		if err != nil {
-			log.Println("ERROR:", err)
+	// region -> groups map
+	rg := make(map[string][]string)
+
+	for group, data := range cfg {
+		if _, ok := rg[data.Region]; !ok {
+			rg[data.Region] = make([]string, 0)
 		}
-		log.Println(awsutil.StringValue(resp))
-	} else {
-		log.Printf("No instances suitable for termination.")
+
+		rg[data.Region] = append(rg[data.Region], group)
+	}
+
+	instances := make(map[string]map[string]candidates.Candidates)
+	for region, groups := range rg {
+		instances[region] = getInstances(region, groups)
+	}
+
+	for region, groups := range instances {
+		victims := make(candidates.Candidates, 0)
+
+		for group, hosts := range groups {
+			oldies := hosts.OlderThan(cfg[group].Age)
+
+			if len(oldies) == len(hosts) && cfg[group].Count >= len(oldies) {
+				log.Printf("Refusing to terminate all instances in group %s.\n", group)
+				continue
+			}
+
+			sort.Sort(oldies)
+
+			if len(oldies) > cfg[group].Count {
+				oldies = oldies[:cfg[group].Count]
+			}
+
+			victims = append(victims, oldies...)
+		}
+
+		terminateParams := &ec2.TerminateInstancesInput{
+			DryRun: aws.Bool(dryRun),
+		}
+
+		for _, victim := range victims {
+			terminateParams.InstanceIds = append(terminateParams.InstanceIds, aws.String(victim.ID))
+		}
+
+		svc := ec2.New(session.New(), &aws.Config{Region: aws.String(region)})
+
+		if len(terminateParams.InstanceIds) > 0 {
+			resp, err := svc.TerminateInstances(terminateParams)
+			if err != nil {
+				log.Println("ERROR:", err)
+			}
+			log.Println(awsutil.StringValue(resp))
+		} else {
+			log.Printf("No instances suitable for termination\n")
+		}
 	}
 }
